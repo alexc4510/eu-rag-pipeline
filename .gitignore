@@ -1,8 +1,11 @@
 # Ignore all .txt files inside the data/ folder and subdirectories
 data/**/*.txt
 
-# Ignore the contents of the vectorstore folder (but keep the folder itself)
+# Ignore all contents of the vectorstore folder (including files and subdirectories)
 data/vectorstore/*
+
+# Keep the vectorstore folder itself (empty)
+!data/vectorstore/
 
 # Keep the JSON files (for example, for eurlex_results.json)
 !data/**/*.json
