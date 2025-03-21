@@ -1,9 +1,17 @@
+# Ignore all .txt files in the data/ folder and its subdirectories
+data/**/*.txt
+
+# Keep the JSON files in the data/ folder and its subdirectories (ensure the file is empty or with an empty array [])
+!data/**/*.json
+
+# Keep the folder structure
+!data/**/
+
+# Ignore other unnecessary files (venv, pyc files, logs, etc.)
 venv/
 __pycache__/
 *.pyc
 *.log
-.env
 data/raw/
 data/vectorstore/
 data/summarized/
-eurlex_results.json
