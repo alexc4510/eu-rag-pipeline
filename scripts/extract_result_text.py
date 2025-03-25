@@ -16,17 +16,12 @@ def extract_result_text():
     Reads eurlex_results.json, visits each link, extracts the HTML content
     from <div id='document1'>, saves to RAW_DIR/<celex_id>.txt
     """
-
-    # Load CELEX entries from metadata
     with open(METADATA_JSON, "r", encoding="utf-8") as f:
         entries = json.load(f)
 
-    # Setup headless browser
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()), options=options
-    )
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     os.makedirs(RAW_DIR, exist_ok=True)
 
@@ -35,14 +30,18 @@ def extract_result_text():
         output_path = RAW_DIR / f"{celex_id}.txt"
 
         if output_path.exists():
-            print(f"⏭️ Skipping {celex_id} (already saved)")
+            message = f"⏭️ Skipping {celex_id} (already saved)"
+            print(message)
+            yield message  # Yield message for Streamlit UI
             continue
 
         url = entry["link"].replace("AUTO", "EN/TXT").replace("&rid=1", "")
-        print(f"🔍 Processing CELEX {celex_id} → {url}")
+        message = f"🔍 Processing CELEX {celex_id} → {url}"
+        print(message)
+        yield message  # Yield for UI
 
         driver.get(url)
-        time.sleep(3)  # Let JavaScript render
+        time.sleep(3)
 
         soup = BeautifulSoup(driver.page_source, "html.parser")
         document_div = soup.find("div", id="document1")
@@ -72,7 +71,9 @@ def extract_result_text():
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(full_text)
 
-        print(f"✅ Saved document for {celex_id}")
+        message = f"✅ Saved document for {celex_id}"
+        print(message)
+        yield message  # Yield for UI
 
     driver.quit()
 
