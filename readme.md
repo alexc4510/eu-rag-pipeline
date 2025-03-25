@@ -20,6 +20,7 @@ Project/
 │   ├── summarize.py
 ├── config.py               # Central config for paths, API keys, constants
 ├── main_pipeline.py        # Runs the full pipeline from scrape to vector DB
+├── gui.py                  # Streamlit interface
 ├── rag_interface.py        # Loads vector DB, allows user to ask questions
 ├── readme.md               # You are reading me right now!
 └── requirements.txt        # Python dependencies
@@ -40,6 +41,23 @@ pip install -r requirements.txt
 
 
 ## 🚀 How to Use
+
+### Step 1: Run the interface
+```bash
+streamlit run gui.py
+```
+This will:
+- Launch the interace in the browser
+- There will be 2 actions displayed at first
+- First: build the database (parse information from EUR-Lex)
+- Second: run the chatbot for prompting
+
+### Step 2:
+- Start prompting the model
+- Enjoy!
+
+### Alternatively, you can
+### Run the code without interface
 
 ### Step 1: Build or update the dataset
 ```bash
