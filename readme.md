@@ -42,23 +42,20 @@ pip install -r requirements.txt
 
 ## 🚀 How to Use
 
+### Option 1: Use the interface
 ### Step 1: Run the interface
 ```bash
 streamlit run gui.py
 ```
 This will:
 - Launch the interace in the browser
-- There will be 2 actions displayed at first
-- First: build the database (parse information from EUR-Lex)
-- Second: run the chatbot for prompting
+- Either build/update the database by pressing "Run Processing Pipeline"
+- Or start prompting the chatbot directly
 
 ### Step 2:
-- Start prompting the model
 - Enjoy!
 
-### Alternatively, you can
-### Run the code without interface
-
+### Option 2: Use the terminal
 ### Step 1: Build or update the dataset
 ```bash
 python main_pipeline.py
