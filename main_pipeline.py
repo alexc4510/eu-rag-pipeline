@@ -6,6 +6,9 @@ from scripts.categorize import categorize_texts
 from scripts.sanitize import sanitize_texts
 from scripts.summarize import summarize_texts
 from scripts.build_vector_db import build_vector_db
+from scripts.parse_romanian_results import parse_all_results_ro
+from scripts.extract_pdf import extract_pdf
+from scripts.clean_pdfs import clean_pdfs
 
 from config import RAW_DIR, SUMMARY_DIR, DEFAULT_TARGET_YEAR
 
@@ -35,9 +38,12 @@ def save_summaries(summaries: dict[str, dict[str, str]], output_dir: Path):
 def main():
     print("🔍 Parsing metadata from EUR-Lex...")
     parse_all_results(target_year=DEFAULT_TARGET_YEAR)
+    parse_all_results_ro(target_year=DEFAULT_TARGET_YEAR)
 
     print("🌐 Downloading full regulation text from links...")
     extract_result_text()
+    extract_pdf()
+    clean_pdfs()
 
     print("📂 Loading raw files from disk...")
     raw_data = load_raw_texts(RAW_DIR)
