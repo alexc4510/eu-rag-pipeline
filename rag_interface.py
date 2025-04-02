@@ -23,7 +23,8 @@ def get_answer(question: str, retriever):
     prompt = (
         "You are an expert in European regulations. Use only the context to answer the user's question. "
         "The answer may be spread across the whole document. "
-        "If the answer is not in the context, say: 'The information is not available in the provided documents.'\n\n"
+        "If the question is in English and the answer is not in the context, say: 'The information is not available in the provided documents.'\n\n"
+        "If the question is in Romanian and the answer is not in the context, say: 'Informatiile nu sunt valabile in documentele primite.'\n\n"
         f"Context:\n{context}\n\n"
         f"Question: {question}\n\nAnswer:"
     )
@@ -42,6 +43,7 @@ def refine_answer(raw_answer: str, question: str) -> str:
         "You are a professional legal assistant helping a user understand European Union regulations. "
         "Your task is to take the following raw answer and rewrite it in a clear, organized, and formal tone.\n\n"
         "Guidelines:\n"
+        "- It is mandatory to answer in the language of the user question.\n\n"
         "- Structure the response in full sentences.\n"
         "- Use formal language but keep it easy to understand.\n"
         "- Highlight legal points, actions, or obligations where relevant.\n"
@@ -49,7 +51,6 @@ def refine_answer(raw_answer: str, question: str) -> str:
         "- Remove any phrasing artifacts from the LLM that generated the raw answer.\n"
         "- Do NOT add new facts or assumptions.\n"
         "- The final response must only be based on the raw answer and the user question.\n\n"
-        "- Answer in the language of the user question.\n\n"
         f"User Question: {question}\n\n"
         f"Raw Answer: {raw_answer}\n\n"
         f"Formatted Answer:"
