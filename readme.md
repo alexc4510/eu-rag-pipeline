@@ -6,24 +6,28 @@ A modular pipeline for scraping, processing, summarizing, vectorizing, and query
 
 ```
 Project/
-├── data/                   # All input/output files
-│   ├── raw/                # Raw text files from EUR-Lex
-│   ├── summarized/         # Final summarized .txt files grouped by category
-│   ├── vectorstore/        # Chroma DB files
-│   └── eurlex_results.json # Metadata with CELEX ID, title, date, and link
-├── scripts/                # Modular processing scripts
-│   └── build_vector_db.py
-│   ├── categorize.py
+├── data/                    # All input/output files
+│   ├── pdfs/                # Downloaded PDF files
+│   ├── processed_documents/ # Final summarized and sanitized .txt files 
+│   ├── raw/                 # Raw text files from EUR-Lex
+│   ├── vectorstore/         # Chroma DB files
+│   ├── eurlex_results.json  # Metadata with CELEX ID, title, date, and link
+│   └── eurlex_ro.json       # Metadata with CELEX ID, title, date, and link for PDF files
+├── scripts/                 # Modular processing scripts
+│   ├── build_vector_db.py
+│   ├── clean_pdfs.py
+│   ├── extract_pdf.py
 │   ├── extract_result_text.py
 │   ├── parse_all_results.py
+│   ├── parse_romanian_results.py
 │   ├── sanitize.py
-│   ├── summarize.py
-├── config.py               # Central config for paths, API keys, constants
-├── main_pipeline.py        # Runs the full pipeline from scrape to vector DB
-├── gui.py                  # Streamlit interface
-├── rag_interface.py        # Loads vector DB, allows user to ask questions
-├── readme.md               # You are reading me right now!
-└── requirements.txt        # Python dependencies
+│   └── summarize.py
+├── config.py                # Central config for paths, API keys, constants
+├── main_pipeline.py         # Runs the full pipeline from scrape to vector DB
+├── gui.py                   # Streamlit interface
+├── rag_interface.py         # Loads vector DB, allows user to ask questions
+├── readme.md                # You are reading me right now!
+└── requirements.txt         # Python dependencies
 ```
 
 ## ⚙️ Setup
