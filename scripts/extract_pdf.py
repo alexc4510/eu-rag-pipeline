@@ -40,7 +40,7 @@ def extract_pdf():
 
     for entry in entries:
         celex_id = entry["celex"]
-        pdf_filename = f"{celex_id}.pdf"
+        pdf_filename = f"CELEX_{celex_id}_RO_TXT.pdf"
         pdf_path = Path(PDF_DIR) / pdf_filename
 
         # ✅ Skip if already downloaded
