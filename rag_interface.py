@@ -49,6 +49,7 @@ def refine_answer(raw_answer: str, question: str) -> str:
         "- Remove any phrasing artifacts from the LLM that generated the raw answer.\n"
         "- Do NOT add new facts or assumptions.\n"
         "- The final response must only be based on the raw answer and the user question.\n\n"
+        "- Answer in the language of the user question.\n\n"
         f"User Question: {question}\n\n"
         f"Raw Answer: {raw_answer}\n\n"
         f"Formatted Answer:"
