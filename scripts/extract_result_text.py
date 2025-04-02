@@ -21,7 +21,9 @@ def extract_result_text():
 
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()), options=options
+    )
 
     os.makedirs(RAW_DIR, exist_ok=True)
 

@@ -12,6 +12,7 @@ from config import (
     DEFAULT_TARGET_YEAR,
     build_query_url,
     CATEGORY_QUERY_PARAMS,
+    MAX_ONE_PAGE,
 )
 
 
@@ -27,68 +28,88 @@ def parse_all_results(target_year=DEFAULT_TARGET_YEAR):
 
     for category, query_param in CATEGORY_QUERY_PARAMS.items():
         print(f"[i] Scraping category: {category}")
+        page = 1
 
-        page = 1  # ✅ Only scrape page 1
-        driver.get(build_query_url(target_year, page, category))
-        time.sleep(5)
-        soup = BeautifulSoup(driver.page_source, "html.parser")
+        while True:
+            print(f"    Processing page {page} for {category}")
+            driver.get(build_query_url(target_year, page, category))
+            time.sleep(5)
+            soup = BeautifulSoup(driver.page_source, "html.parser")
 
-        try:
-            results_info = soup.select_one("div.ResultsToolsWrapper strong:last-child")
-            total_results = int(results_info.text.strip()) if results_info else 0
-            print(f"    Total results: {total_results}. Scraping only page 1.")
-
-            print(f"    Processing page {page}/1 for {category}")
-            search_results = soup.select(".SearchResult")
-
-            for div in search_results:
-                a_tag = div.find("h2").find("a") if div.find("h2") else None
-                if not a_tag:
-                    continue
-
-                title = a_tag.text.strip()
-                full_link = urljoin(BASE_URL, a_tag.get("href"))
-
-                celex = None
-                date_str = None
-
-                try:
-                    collapse_panel = div.find("div", class_="CollapsePanel-sm")
-                    result_data = collapse_panel.find(
-                        "div", class_=lambda x: x and "SearchResultData" in x
+            try:
+                if page == 1:
+                    results_info = soup.select_one(
+                        "div.ResultsToolsWrapper strong:last-child"
                     )
-                    row_div = result_data.find("div", class_="row")
-                    col_sm_6_list = row_div.find_all("div", class_="col-sm-6")
-
-                    if len(col_sm_6_list) >= 2:
-                        dl1 = col_sm_6_list[0].find("dl")
-                        dl2 = col_sm_6_list[1].find("dl")
-
-                        if dl1:
-                            for dt, dd in zip(dl1.find_all("dt"), dl1.find_all("dd")):
-                                if "CELEX number" in dt.text:
-                                    celex = dd.text.strip()
-
-                        if dl2 and len(dl2.find_all("dd")) >= 2:
-                            raw_text = dl2.find_all("dd")[1].text.strip()
-                            date_str = raw_text.split(";")[0].strip()
-                except Exception as e:
-                    print(f"[!] Error extracting details: {e}")
-
-                if celex:
-                    results_data.append(
-                        {
-                            "celex": celex,
-                            "title": title,
-                            "link": full_link,
-                            "date": date_str,
-                            "page": page,
-                            "category": category,
-                        }
+                    total_results = (
+                        int(results_info.text.strip()) if results_info else 0
                     )
+                    print(f"    Total results: {total_results}.")
 
-        except Exception as e:
-            print(f"❌ Error processing category '{category}': {e}")
+                search_results = soup.select(".SearchResult")
+
+                for div in search_results:
+                    a_tag = div.find("h2").find("a") if div.find("h2") else None
+                    if not a_tag:
+                        continue
+
+                    title = a_tag.text.strip()
+                    full_link = urljoin(BASE_URL, a_tag.get("href"))
+
+                    celex = None
+                    date_str = None
+
+                    try:
+                        collapse_panel = div.find("div", class_="CollapsePanel-sm")
+                        result_data = collapse_panel.find(
+                            "div", class_=lambda x: x and "SearchResultData" in x
+                        )
+                        row_div = result_data.find("div", class_="row")
+                        col_sm_6_list = row_div.find_all("div", class_="col-sm-6")
+
+                        if len(col_sm_6_list) >= 2:
+                            dl1 = col_sm_6_list[0].find("dl")
+                            dl2 = col_sm_6_list[1].find("dl")
+
+                            if dl1:
+                                for dt, dd in zip(
+                                    dl1.find_all("dt"), dl1.find_all("dd")
+                                ):
+                                    if "CELEX number" in dt.text:
+                                        celex = dd.text.strip()
+
+                            if dl2 and len(dl2.find_all("dd")) >= 2:
+                                raw_text = dl2.find_all("dd")[1].text.strip()
+                                date_str = raw_text.split(";")[0].strip()
+                    except Exception as e:
+                        print(f"[!] Error extracting details: {e}")
+
+                    if celex:
+                        results_data.append(
+                            {
+                                "celex": celex,
+                                "title": title,
+                                "link": full_link,
+                                "date": date_str,
+                                "page": page,
+                                "category": category,
+                            }
+                        )
+
+            except Exception as e:
+                print(f"❌ Error processing category '{category}': {e}")
+                break
+
+            if MAX_ONE_PAGE:
+                print(f"    [i] MAX_ONE_PAGE is True. Stopping after page 1.")
+                break
+
+            next_button = soup.select_one("li.next:not(.disabled)")
+            if not next_button:
+                print(f"    [i] No more pages for {category}.")
+                break
+
+            page += 1
 
     driver.quit()
 

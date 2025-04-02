@@ -11,11 +11,7 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from config import BASE_URL_RO, METADATA_JSON_RO, DEFAULT_TARGET_YEAR
-
-# Limit to one page per category
-MAX_PAGE_PER_CATEGORY = 1
+from config import BASE_URL_RO, METADATA_JSON_RO, DEFAULT_TARGET_YEAR, MAX_ONE_PAGE
 
 # Ensure download directory exists
 os.makedirs(os.path.dirname(METADATA_JSON_RO), exist_ok=True)
@@ -26,12 +22,6 @@ def build_query_url(target_year: int, page: int) -> str:
 
 
 def parse_all_results_ro(target_year=DEFAULT_TARGET_YEAR):
-    """
-    Scrapes EUR-Lex for a given year, saving results to METADATA_JSON_RO,
-    merging new entries with existing ones, and sorting by descending date.
-    This version only scrapes one page per category.
-    """
-
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     driver = webdriver.Chrome(
@@ -40,101 +30,116 @@ def parse_all_results_ro(target_year=DEFAULT_TARGET_YEAR):
 
     driver.set_page_load_timeout(253)
     results_data = []
-
-    # Only load the first page
     page = 1
-    print(f"\n[+] Processing page {page}...")
-    driver.get(build_query_url(target_year, page))
-    time.sleep(5)
-    soup = BeautifulSoup(driver.page_source, "html.parser")
 
-    try:
-        # Extract total results info for logging (optional)
-        results_info = soup.select_one("div.ResultsToolsWrapper strong:last-child")
-        total_results = int(results_info.text.strip()) if results_info else 0
-        print(f"[i] Total results: {total_results}. Scraping only page 1.")
+    while True:
+        print(f"\n[+] Processing page {page}...")
+        driver.get(build_query_url(target_year, page))
+        time.sleep(5)
+        soup = BeautifulSoup(driver.page_source, "html.parser")
 
-        wrapper = soup.body.find("div", class_="Wrapper clearfix")
-        next_div = wrapper.find("div", recursive=False)
-        all_left_pads = next_div.find_all("div", class_="left-right-padding")
-        left_padding = all_left_pads[1]
-        main_content = left_padding.find("div", id="MainContent")
-        offcanvas = main_content.find(
-            "div", class_=lambda x: x and "row" in x and "row-offcanvas" in x
-        )
-        col_md_9 = offcanvas.find("div", class_="col-md-9")
-        eurlex_content = col_md_9.find(
-            "div", class_="EurlexContent RelocateFilteringWidget"
-        )
-
-        inner_divs = eurlex_content.find_all("div", recursive=False)
-        search_results = [
-            div for div in inner_divs if "SearchResult" in div.get("class", [])
-        ]
-
-        for i, div in enumerate(search_results):
-            h2 = div.find("h2")
-            if not h2:
-                continue
-            a_tag = h2.find("a")
-            if not a_tag:
-                continue
-
-            title = a_tag.text.strip()
-            raw_href = a_tag.get("href")
-            full_link = urljoin(BASE_URL_RO, raw_href)
-
-            date_str = None
-            celex = None
-            try:
-                collapse_panel = div.find("div", class_="CollapsePanel-sm")
-                result_data = collapse_panel.find(
-                    "div",
-                    class_=lambda x: x and "SearchResultData" in x and "collapse" in x,
+        try:
+            if page == 1:
+                results_info = soup.select_one(
+                    "div.ResultsToolsWrapper strong:last-child"
                 )
-                row_div = result_data.find("div", class_="row")
-                col_sm_6_list = row_div.find_all("div", class_="col-sm-6")
+                total_results = int(results_info.text.strip()) if results_info else 0
+                print(f"[i] Total results: {total_results}.")
 
-                if len(col_sm_6_list) >= 2:
-                    dl1 = col_sm_6_list[0].find("dl")
-                    dl2 = col_sm_6_list[1].find("dl")
+            wrapper = soup.body.find("div", class_="Wrapper clearfix")
+            next_div = wrapper.find("div", recursive=False)
+            all_left_pads = next_div.find_all("div", class_="left-right-padding")
+            left_padding = all_left_pads[1]
+            main_content = left_padding.find("div", id="MainContent")
+            offcanvas = main_content.find(
+                "div", class_=lambda x: x and "row" in x and "row-offcanvas" in x
+            )
+            col_md_9 = offcanvas.find("div", class_="col-md-9")
+            eurlex_content = col_md_9.find(
+                "div", class_="EurlexContent RelocateFilteringWidget"
+            )
 
-                    if dl1:
-                        dt_tags = dl1.find_all("dt")
-                        dd_tags = dl1.find_all("dd")
-                        for dt, dd in zip(dt_tags, dd_tags):
-                            if "CELEX number" in dt.text:
-                                celex = dd.text.strip()
+            inner_divs = eurlex_content.find_all("div", recursive=False)
+            search_results = [
+                div for div in inner_divs if "SearchResult" in div.get("class", [])
+            ]
 
-                    if dl2:
-                        dd_tags = dl2.find_all("dd")
-                        if len(dd_tags) >= 2:
-                            raw_text = dd_tags[1].text.strip()
-                            date_str = raw_text.split(";")[0].strip()
-            except Exception as e:
-                print(
-                    f"[!] Failed to extract CELEX or date for page {page}, item {i + 1}: {e}"
-                )
-                continue
+            for i, div in enumerate(search_results):
+                h2 = div.find("h2")
+                if not h2:
+                    continue
+                a_tag = h2.find("a")
+                if not a_tag:
+                    continue
 
-            if celex is None:
-                continue
+                title = a_tag.text.strip()
+                raw_href = a_tag.get("href")
+                full_link = urljoin(BASE_URL_RO, raw_href)
 
-            entry = {
-                "celex": celex,
-                "title": title,
-                "link": full_link,
-                "date": date_str,
-                "page": page,
-            }
-            results_data.append(entry)
+                date_str = None
+                celex = None
+                try:
+                    collapse_panel = div.find("div", class_="CollapsePanel-sm")
+                    result_data = collapse_panel.find(
+                        "div",
+                        class_=lambda x: x
+                        and "SearchResultData" in x
+                        and "collapse" in x,
+                    )
+                    row_div = result_data.find("div", class_="row")
+                    col_sm_6_list = row_div.find_all("div", class_="col-sm-6")
 
-    except Exception as e:
-        print("❌ General error:", e)
+                    if len(col_sm_6_list) >= 2:
+                        dl1 = col_sm_6_list[0].find("dl")
+                        dl2 = col_sm_6_list[1].find("dl")
+
+                        if dl1:
+                            dt_tags = dl1.find_all("dt")
+                            dd_tags = dl1.find_all("dd")
+                            for dt, dd in zip(dt_tags, dd_tags):
+                                if "CELEX number" in dt.text:
+                                    celex = dd.text.strip()
+
+                        if dl2:
+                            dd_tags = dl2.find_all("dd")
+                            if len(dd_tags) >= 2:
+                                raw_text = dd_tags[1].text.strip()
+                                date_str = raw_text.split(";")[0].strip()
+                except Exception as e:
+                    print(
+                        f"[!] Failed to extract CELEX or date for page {page}, item {i + 1}: {e}"
+                    )
+                    continue
+
+                if celex is None:
+                    continue
+
+                entry = {
+                    "celex": celex,
+                    "title": title,
+                    "link": full_link,
+                    "date": date_str,
+                    "page": page,
+                }
+                results_data.append(entry)
+
+        except Exception as e:
+            print("❌ General error:", e)
+            break
+
+        if MAX_ONE_PAGE:
+            print("[i] MAX_ONE_PAGE is True. Stopping after page 1.")
+            break
+
+        next_button = soup.select_one("li.next:not(.disabled)")
+        if not next_button:
+            print("[i] No more pages.")
+            break
+
+        page += 1
 
     driver.quit()
 
-    # Merge with existing JSON
     existing_data = []
     try:
         with open(METADATA_JSON_RO, "r", encoding="utf-8") as f:

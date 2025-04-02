@@ -1,6 +1,11 @@
 # config.py
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+# Flag for maximum 1 page
+MAX_ONE_PAGE = True
 
 # Base paths
 BASE_DIR = Path(__file__).resolve().parent
@@ -9,14 +14,15 @@ SCRIPTS_DIR = BASE_DIR / "scripts"
 
 # Data paths
 RAW_DIR = DATA_DIR / "raw"
-SUMMARY_DIR = DATA_DIR / "summarized"
 VECTORSTORE_DIR = DATA_DIR / "vectorstore"
 METADATA_JSON = DATA_DIR / "eurlex_results.json"
 METADATA_JSON_RO = DATA_DIR / "eurlex_ro.json"
 PDF_DIR = DATA_DIR / "pdfs"
+PROCESSED_DOCUMENTS = DATA_DIR / "processed_documents"
 
 # OpenAI configuration
-OPENAI_API_KEY = ""
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = "gpt-4o-mini"
 MAX_SUMMARY_TOKENS = 600
 TRUNCATE_WORDS = 5000

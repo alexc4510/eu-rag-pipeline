@@ -63,8 +63,10 @@ python main_pipeline.py
 This will:
 - Scrape new metadata from EUR-Lex
 - Extract HTML content
-- Categorize, sanitize and summarize documents (skips already processed ones)
-- Save outputs in structured folders
+- Scrape PDF Documents
+- Extract the text content of the PDFs
+- Sanitize and summarize documents (skips already processed ones)
+- Save outputs in the folder processed_documents
 - Build or update the vector database
 
 ### Step 2: Query the knowledge base

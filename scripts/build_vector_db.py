@@ -1,7 +1,7 @@
 # scripts/build_vector_db.py
 
 from pathlib import Path
-from config import SUMMARY_DIR, VECTORSTORE_DIR, OPENAI_API_KEY
+from config import PROCESSED_DOCUMENTS, VECTORSTORE_DIR, OPENAI_API_KEY
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -10,7 +10,7 @@ import os
 
 
 def build_vector_db(
-    root_directory: Path = SUMMARY_DIR, persist_dir: Path = VECTORSTORE_DIR
+    root_directory: Path = PROCESSED_DOCUMENTS, persist_dir: Path = VECTORSTORE_DIR
 ):
     embedding = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     text_splitter = RecursiveCharacterTextSplitter(
@@ -22,24 +22,19 @@ def build_vector_db(
 
     documents = []
 
-    for category_dir in root_directory.iterdir():
-        if not category_dir.is_dir():
-            continue
-        category = category_dir.name
-        for txt_file in category_dir.rglob("*.txt"):
-            with open(txt_file, "r", encoding="utf-8") as f:
-                text = f.read()
-                chunks = text_splitter.split_text(text)
-                for chunk in chunks:
-                    documents.append(
-                        Document(
-                            page_content=chunk,
-                            metadata={
-                                "category": category,
-                                "source": str(txt_file.relative_to(root_directory)),
-                            },
-                        )
+    for txt_file in root_directory.glob("*.txt"):
+        with open(txt_file, "r", encoding="utf-8") as f:
+            text = f.read()
+            chunks = text_splitter.split_text(text)
+            for chunk in chunks:
+                documents.append(
+                    Document(
+                        page_content=chunk,
+                        metadata={
+                            "source": str(txt_file.name),
+                        },
                     )
+                )
 
     os.makedirs(persist_dir, exist_ok=True)
     db = Chroma.from_documents(

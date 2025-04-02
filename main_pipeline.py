@@ -2,7 +2,6 @@
 
 from scripts.parse_all_results import parse_all_results
 from scripts.extract_result_text import extract_result_text
-from scripts.categorize import categorize_texts
 from scripts.sanitize import sanitize_texts
 from scripts.summarize import summarize_texts
 from scripts.build_vector_db import build_vector_db
@@ -10,7 +9,7 @@ from scripts.parse_romanian_results import parse_all_results_ro
 from scripts.extract_pdf import extract_pdf
 from scripts.clean_pdfs import clean_pdfs
 
-from config import RAW_DIR, SUMMARY_DIR, DEFAULT_TARGET_YEAR
+from config import RAW_DIR, PROCESSED_DOCUMENTS, DEFAULT_TARGET_YEAR
 
 from pathlib import Path
 
@@ -25,14 +24,13 @@ def load_raw_texts(raw_dir: Path) -> dict[str, str]:
     return data
 
 
-# Save final summarized output to disk
-def save_summaries(summaries: dict[str, dict[str, str]], output_dir: Path):
-    for category, files in summaries.items():
-        for relative_path, summary in files.items():
-            output_path = output_dir / category / relative_path
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(summary)
+# Save final summarized output to disk (flat structure)
+def save_summaries(summaries: dict[str, str], output_dir: Path):
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for relative_path, summary in summaries.items():
+        output_path = output_dir / Path(relative_path).name
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(summary)
 
 
 def main():
@@ -48,17 +46,14 @@ def main():
     print("📂 Loading raw files from disk...")
     raw_data = load_raw_texts(RAW_DIR)
 
-    print("🏷️ Categorizing documents...")
-    categorized = categorize_texts(raw_data)
-
     print("🧼 Sanitizing text...")
-    sanitized = sanitize_texts(categorized)
+    sanitized = sanitize_texts(raw_data)
 
     print("🧠 Summarizing content...")
     summarized = summarize_texts(sanitized)
 
     print("💾 Saving summaries to disk...")
-    save_summaries(summarized, SUMMARY_DIR)
+    save_summaries(summarized, PROCESSED_DOCUMENTS)
 
     print("📚 Building vector database...")
     build_vector_db()
